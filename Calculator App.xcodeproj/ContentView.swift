@@ -148,3 +148,9 @@ struct ContentView: View {
 #Preview {
     ContentView()
 }
+// but if your Xcode version is older, it may expect the classic PreviewProvider: 
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
+}  // try this it will def work :>
