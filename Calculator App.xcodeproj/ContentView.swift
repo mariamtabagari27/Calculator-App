@@ -5,62 +5,74 @@ struct ContentView: View {
     @State private var currentNumber: Double = 0
     @State private var previousNumber: Double = 0
     @State private var operation: String = ""
+    @State private var isNewNumber = true
 
-    let buttons = [
-        ["7","8","9","÷"],
-        ["4","5","6","×"],
-        ["1","2","3","−"],
-        ["0","C","=","+"]
+    let buttons: [[String]] = [
+        ["C", "+/-", "%", "÷"],
+        ["7","8","9","×"],
+        ["4","5","6","−"],
+        ["1","2","3","+"],
+        ["0",".","="]
     ]
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            VStack {
+            VStack(spacing: 12) {
                 Spacer()
 
-                // MARK: - Display
+                // Display
                 HStack {
                     Spacer()
                     Text(display)
-                        .font(.system(size: 60, weight: .bold))
+                        .font(.system(size: 70, weight: .light))
                         .foregroundColor(.white)
-                        .padding()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
                 }
+                .padding()
 
-                // MARK: - Buttons
+                // Buttons
                 ForEach(buttons, id: \.self) { row in
-                    HStack(spacing: 15) {
+                    HStack(spacing: 12) {
                         ForEach(row, id: \.self) { button in
                             Button(action: {
                                 buttonTapped(button)
                             }) {
                                 Text(button)
-                                    .font(.system(size: 28, weight: .bold))
-                                    .frame(width: 70, height: 70)
+                                    .font(.system(size: 28, weight: .medium))
+                                    .frame(
+                                        width: button == "0" ? 160 : 70,
+                                        height: 70
+                                    )
                                     .background(getColor(button))
                                     .foregroundColor(.white)
                                     .cornerRadius(35)
                             }
                         }
                     }
-                    .padding(.bottom, 5)
                 }
             }
             .padding()
         }
     }
 
-    // MARK: - Button Logic
+    // MARK: - Logic
     func buttonTapped(_ button: String) {
         switch button {
 
         case "0"..."9":
-            if display == "0" {
+            if isNewNumber {
                 display = button
+                isNewNumber = false
             } else {
-                display += button
+                display = display == "0" ? button : display + button
+            }
+
+        case ".":
+            if !display.contains(".") {
+                display += "."
             }
 
         case "C":
@@ -68,41 +80,66 @@ struct ContentView: View {
             currentNumber = 0
             previousNumber = 0
             operation = ""
+            isNewNumber = true
+
+        case "+/-":
+            if let value = Double(display) {
+                display = formatResult(-value)
+            }
+
+        case "%":
+            if let value = Double(display) {
+                display = formatResult(value / 100)
+            }
 
         case "+", "−", "×", "÷":
             previousNumber = Double(display) ?? 0
             operation = button
-            display = "0"
+            isNewNumber = true
 
         case "=":
             currentNumber = Double(display) ?? 0
 
+            var result: Double = 0
+
             switch operation {
-            case "+":
-                display = "\(previousNumber + currentNumber)"
-            case "−":
-                display = "\(previousNumber - currentNumber)"
-            case "×":
-                display = "\(previousNumber * currentNumber)"
+            case "+": result = previousNumber + currentNumber
+            case "−": result = previousNumber - currentNumber
+            case "×": result = previousNumber * currentNumber
             case "÷":
-                display = currentNumber == 0 ? "Error" : "\(previousNumber / currentNumber)"
-            default:
-                break
+                if currentNumber == 0 {
+                    display = "Error"
+                    return
+                }
+                result = previousNumber / currentNumber
+            default: return
             }
+
+            display = formatResult(result)
+            isNewNumber = true
 
         default:
             break
         }
     }
 
-    // MARK: - Button Colors
+    // MARK: - Format Numbers
+    func formatResult(_ value: Double) -> String {
+        if value.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(value))"
+        } else {
+            return "\(value)"
+        }
+    }
+
+    // MARK: - Colors
     func getColor(_ button: String) -> Color {
         if ["+","−","×","÷","="].contains(button) {
             return .orange
-        } else if button == "C" {
-            return .gray
+        } else if ["C","+/-","%"].contains(button) {
+            return Color.gray
         } else {
-            return Color(white: 0.3)
+            return Color(white: 0.2)
         }
     }
 }
@@ -111,4 +148,3 @@ struct ContentView: View {
 #Preview {
     ContentView()
 }
-
